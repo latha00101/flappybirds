@@ -1,4 +1,3 @@
-
 //board
 let board;
 let boardWidth = 360;
@@ -29,7 +28,6 @@ let pipeY = 0;
 let topPipeImg;
 let bottomPipeImg;
 
-
 let velocityX = -2; 
 let velocityY = 0; 
 let gravity = 0.4;
@@ -43,8 +41,6 @@ window.onload = function() {
     board.width = boardWidth;
     context = board.getContext("2d"); 
 
-   
-   
     birdImg = new Image();
     birdImg.src = "./flappybird.png";
     birdImg.onload = function() {
@@ -59,7 +55,12 @@ window.onload = function() {
 
     requestAnimationFrame(update);
     setInterval(placePipes, 1500); //every 1.5 seconds
+    
+    // Desktop keyboard controls
     document.addEventListener("keydown", moveBird);
+    
+    // Mobile touch controls
+    document.addEventListener("touchstart", moveBird, { passive: false });
 }
 
 function update() {
@@ -71,7 +72,6 @@ function update() {
 
     //bird
     velocityY += gravity;
-   
     bird.y = Math.max(bird.y + velocityY, 0); 
     context.drawImage(birdImg, bird.x, bird.y, bird.width, bird.height);
 
@@ -95,14 +95,13 @@ function update() {
         }
     }
 
-  
     while (pipeArray.length > 0 && pipeArray[0].x < -pipeWidth) {
         pipeArray.shift(); 
     }
 
     //score
     context.fillStyle = "white";
-    context.font="45px sans-serif";
+    context.font = "45px sans-serif";
     context.fillText(score, 5, 45);
 
     if (gameOver) {
@@ -115,7 +114,6 @@ function placePipes() {
         return;
     }
 
-  
     let randomPipeY = pipeY - pipeHeight/4 - Math.random()*(pipeHeight/2);
     let openingSpace = board.height/4;
 
@@ -141,11 +139,17 @@ function placePipes() {
 }
 
 function moveBird(e) {
-    if (e.code == "Space" || e.code == "ArrowUp" || e.code == "KeyX") {
-       
+    // Triggers if it's a touchscreen tap OR the specific desktop jump keys
+    if (e.type === "touchstart" || e.code === "Space" || e.code === "ArrowUp" || e.code === "KeyX") {
+        
+        // Prevent background scrolling/zooming on mobile devices when tapping
+        if (e.type === "touchstart") {
+            e.preventDefault();
+        }
+
         velocityY = -6;
 
-        
+        // Reset game state
         if (gameOver) {
             bird.y = birdY;
             pipeArray = [];
@@ -156,5 +160,5 @@ function moveBird(e) {
 }
 
 function detectCollision(a, b) {
-    return a.x < b.x + b.width &&  a.x + a.width > b.x &&   a.y < b.y + b.height &&  a.y + a.height > b.y;    
+    return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;    
 }
