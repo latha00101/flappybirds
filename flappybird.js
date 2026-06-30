@@ -32,6 +32,7 @@ let velocityX = -2;
 let velocityY = 0; 
 let gravity = 0.4;
 
+let gameStarted = false; // NEW: Tracks if the current round has actually begun
 let gameOver = false;
 let score = 0;
 
@@ -70,23 +71,29 @@ function update() {
     }
     context.clearRect(0, 0, board.width, board.height);
 
-    //bird
-    velocityY += gravity;
-    bird.y = Math.max(bird.y + velocityY, 0); 
+    // bird physics (Only apply if the game has started)
+    if (gameStarted) {
+        velocityY += gravity;
+        bird.y = Math.max(bird.y + velocityY, 0); 
+    }
     context.drawImage(birdImg, bird.x, bird.y, bird.width, bird.height);
 
-    if (bird.y > board.height) {
+    // FIX: Game over happens as soon as the bird touches the ground, not after it falls through
+    if (bird.y + bird.height >= board.height) {
+        bird.y = board.height - bird.height; // Snap to ground
         gameOver = true;
     }
 
-    //pipes
+    // pipes (Only move pipes if the game has started)
     for (let i = 0; i < pipeArray.length; i++) {
         let pipe = pipeArray[i];
-        pipe.x += velocityX;
+        if (gameStarted) {
+            pipe.x += velocityX;
+        }
         context.drawImage(pipe.img, pipe.x, pipe.y, pipe.width, pipe.height);
 
         if (!pipe.passed && bird.x > pipe.x + pipe.width) {
-            score += 0.5; //0.5 because there are 2 pipes! so 0.5*2 = 1, 1 for each set of pipes
+            score += 0.5; 
             pipe.passed = true;
         }
 
@@ -99,18 +106,27 @@ function update() {
         pipeArray.shift(); 
     }
 
-    //score
+    // score
     context.fillStyle = "white";
     context.font = "45px sans-serif";
     context.fillText(score, 5, 45);
 
+    // Help text for the player
+    if (!gameStarted && !gameOver) {
+        context.font = "20px sans-serif";
+        context.fillText("PRESS KEY TO START", boardWidth / 4, boardHeight / 2 + 50);
+    }
+
     if (gameOver) {
         context.fillText("GAME OVER", 5, 90);
+        context.font = "20px sans-serif";
+        context.fillText("PRESS KEY TO RESTART", 5, 130);
     }
 }
 
 function placePipes() {
-    if (gameOver) {
+    // Don't spawn pipes if the game is over OR hasn't started yet
+    if (gameOver || !gameStarted) {
         return;
     }
 
@@ -139,22 +155,24 @@ function placePipes() {
 }
 
 function moveBird(e) {
-    // Triggers if it's a touchscreen tap OR the specific desktop jump keys
     if (e.type === "touchstart" || e.code === "Space" || e.code === "ArrowUp" || e.code === "KeyX") {
         
-        // Prevent background scrolling/zooming on mobile devices when tapping
         if (e.type === "touchstart") {
             e.preventDefault();
         }
 
-        velocityY = -6;
-
-        // Reset game state
         if (gameOver) {
+            
             bird.y = birdY;
             pipeArray = [];
             score = 0;
+            velocityY = 0; 
             gameOver = false;
+            gameStarted = false; 
+        } else {
+           
+            gameStarted = true;
+            velocityY = -6;
         }
     }
 }
